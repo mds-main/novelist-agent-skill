@@ -4,6 +4,8 @@
 
 Public skill distribution for the Novelist Agentic API.
 
+Paid API operations support x402 wallet payments or API keys backed by prepaid credits. API-key usage requires signing up in the app first at [ainovelist.app](https://ainovelist.app), creating an API key in the dashboard, and adding prepaid credits.
+
 Install with:
 
 ```bash

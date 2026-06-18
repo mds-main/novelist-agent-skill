@@ -21,7 +21,7 @@ POST /generate
 | Public | `"publish_to_bookstore": true` | Lower price; generated novel may appear in the bookstore. |
 | Private | `"publish_to_bookstore": false` | Higher price; only the paying wallet can access it. |
 
-Prices are dynamic. Always read the current amount from the `payment-required` header returned by the API.
+Prices are dynamic. For x402, always read the current amount from the `payment-required` header returned by the API. For API-key prepaid credits, the server validates the full price against the account credit balance.
 
 ## Request Body
 
@@ -73,6 +73,10 @@ Example body:
 
 ## Payment and Submission Flow
 
+Choose one payment mode:
+
+### x402
+
 1. Submit `POST /generate` with the desired request body and no payment header.
 2. Expect `402 Payment Required`.
 3. Decode/read the payment requirements from the `payment-required` header.
@@ -80,14 +84,29 @@ Example body:
 5. Retry `POST /generate` with the same JSON body and the payment header.
 6. Expect `202 Accepted` with `request_id`, `status_url`, and `poll_interval_seconds`.
 
+### API key with prepaid credits
+
+1. The user signs up first at `https://ainovelist.app`.
+2. In the dashboard, the user creates an API key and purchases prepaid credits.
+3. Submit `POST /generate` with the desired request body and:
+
+```http
+Authorization: Bearer <api_key>
+Idempotency-Key: <unique-generation-id>
+```
+
+4. The API reserves prepaid credits for the full server-side price.
+5. Expect `202 Accepted` with `request_id`, `status_url`, and `poll_interval_seconds`.
+6. If the account does not have enough funds, expect HTTP `402` with `code: insufficient_prepaid_credits` and refill in the dashboard.
+
 Successful queued response shape:
 
 ```json
 {
   "request_id": "REQUEST_ID",
   "status": "queued",
-  "settlement_status": "pending",
-  "payment_model": "deferred_settlement",
+  "settlement_status": "pending or reserved",
+  "payment_model": "deferred_settlement or prepaid_credits",
   "status_url": "/agent/v1/status/REQUEST_ID",
   "poll_interval_seconds": 60
 }
@@ -99,6 +118,13 @@ Use:
 
 ```text
 GET /status/{request_id}?wallet={wallet_address}
+```
+
+For prepaid API-key generations:
+
+```text
+GET /status/{request_id}
+Authorization: Bearer <api_key>
 ```
 
 Status values:
