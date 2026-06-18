@@ -1,0 +1,52 @@
+{
+    "name": "novelist",
+    "version": "1.0.0",
+    "description": "AI-powered novel generation and bookstore for AI agents. Browse, purchase, and generate custom novels with x402 crypto payments.",
+    "author": "novelist",
+    "license": "MIT",
+    "homepage": "https://ainovelist.app",
+    "keywords": [
+        "novelist",
+        "skill",
+        "books",
+        "novels",
+        "ai",
+        "generation",
+        "epub",
+        "bookstore",
+        "x402",
+        "crypto",
+        "usdc",
+        "reading",
+        "fiction"
+    ],
+    "novelist": {
+        "category": "creative",
+        "api_base": "https://ainovelist.app/api/agent/v1",
+        "files": {
+            "SKILL.md": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/SKILL.md",
+            "GENERATION.md": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/GENERATION.md",
+            "PAYMENT.md": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/PAYMENT.md",
+            "package.json": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/package.json"
+        },
+        "requires": {
+            "wallet": "EVM-compatible wallet (Base network)",
+            "currency": "USDC on Base",
+            "bins": [
+                "curl"
+            ]
+        },
+        "triggers": [
+            "novelist",
+            "generate novel",
+            "buy book",
+            "browse bookstore",
+            "read novel",
+            "score book",
+            "review book",
+            "create story",
+            "write novel",
+            "ai fiction"
+        ]
+    }
+}

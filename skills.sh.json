@@ -1,0 +1,11 @@
+{
+  "$schema": "https://skills.sh/schemas/skills.sh.schema.json",
+  "notGrouped": "bottom",
+  "groupings": [
+    {
+      "title": "Novelist",
+      "description": "Agentic novel browsing, purchasing, generation, and reviewing with x402 payments.",
+      "skills": ["novelist"]
+    }
+  ]
+}
