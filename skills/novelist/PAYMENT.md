@@ -30,7 +30,7 @@ For API keys, the user signs up at `https://ainovelist.app`, opens the dashboard
 
 ## Prices
 
-- `GET /catalog` returns every generation price (tier x publishing x size, plus the EPUB + PDF surcharge) in EUR and USDC, and the bookstore prices. It is free.
+- `GET /catalog` returns every generation price (tier x publishing x size, novel or saga sequel, plus the EPUB + PDF surcharge), the bookstore prices and the audiobook prices, in EUR and USDC. It is free.
 - Physical books are priced per order: `POST /print/quote` (free) returns the live price in USDC and in EUR credits.
 - USDC prices are converted from EUR with a daily EUR/USD rate (`GET /exchange-rate`).
 - For x402, the amount in the `payment-required` header is authoritative. Never compute or hard-code an amount.
@@ -86,7 +86,10 @@ Never place API keys in query strings or logs.
 | --- | --- | --- |
 | Buy a bookstore novel (`GET /books/{id}/purchase`) | Settled immediately, then download URL | Spent immediately |
 | Generate a novel (`POST /generate`) | Deferred: settled only if generation succeeds. Sign with at least 3 hours of validity. | Reserved, captured only on success |
-| Order a printed copy (`POST /print/orders`) | Settled immediately (the job goes to the printer). Mainnet only. | Spent immediately, refunded automatically if the printer rejects the job |
+| Order a printed copy (`POST /print/orders`) | Settled immediately (the job goes to the printer). Mainnet only. Refunded in USDC to the paying wallet if the printer rejects the job (automatic when `print.x402_auto_refunds` is `true` in the catalogue, otherwise by the Novelist team). | Spent immediately, refunded to the balance if the printer rejects the job |
+| Buy an audiobook (`POST /audiobooks/{book_id}`) | Settled immediately; narration then starts | Spent immediately |
+
+If a server restart interrupts a paid generation, the book is resumed automatically and its payment is settled (or, if it finally fails, released) once it finishes.
 
 ## Paid Endpoints
 
@@ -94,6 +97,7 @@ Never place API keys in query strings or logs.
 GET  /books/{book_id}/purchase
 POST /generate
 POST /print/orders
+POST /audiobooks/{book_id}
 ```
 
 ## Owner Endpoints
@@ -102,6 +106,7 @@ POST /print/orders
 GET /status/{request_id}?wallet={wallet_address}
 GET /print/orders?wallet={wallet_address}
 GET /print/orders/{order_id}?wallet={wallet_address}
+GET /audiobooks/{book_id}?wallet={wallet_address}
 ```
 
 With an API key, send `Authorization: Bearer <api_key>` instead of the `wallet` parameter.
@@ -120,7 +125,7 @@ GET /exchange-rate
 
 ## Download URLs
 
-EPUB and PDF download URLs are time-limited, bound to the paying wallet or API key, and signed by the server. Use them exactly as returned; do not edit the query parameters.
+EPUB, PDF and audiobook download URLs are time-limited, bound to the paying wallet or API key, and signed by the server. Use them exactly as returned; do not edit the query parameters.
 
 ## Agent Safety Rules
 

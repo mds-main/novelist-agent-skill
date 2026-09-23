@@ -24,6 +24,9 @@ Call `GET /catalog` first: it lists the options that are live right now (for exa
 | Quality tier | `quality_tier` | `world_class` costs a multiple of `pro` (premium models and configuration). |
 | Length | `novel_size` | `xl` adds a surcharge. `s`, `m` and `l` cost the same. |
 | Delivery format | `output_format` | `both` (EPUB + PDF) adds a small fixed surcharge. `epub` and `pdf` cost the same. |
+| Saga continuation | `saga_book_ids` | A sequel is priced on the saga price list (every tier, publishing option and size has a saga price). |
+
+Dedications, character photos and cover instructions are free.
 
 Prices are dynamic. For x402 the `payment-required` header of the `402` response is authoritative. For prepaid credits the server checks the full price against the account balance.
 
@@ -52,6 +55,10 @@ Optional fields:
 | `tone` | string[] | none | up to 5 |
 | `target_audience` | string | none | up to 100 characters |
 | `setting` | string | none | up to 500 characters |
+| `cover_instructions` | string | none | up to 1500 characters |
+| `dedication_id` | string | none | from `POST /dedications` |
+| `character_reference_set_id` | string | none | from `POST /character-references` |
+| `saga_book_ids` | string[] | none | up to 9 previous books, first book first |
 
 Field notes:
 
@@ -59,7 +66,8 @@ Field notes:
 - `image_style` sets one consistent artwork style for the cover and the part-opener illustrations. `auto` lets the illustrator choose from the story.
 - `output_format`: `pdf` and `both` also produce the print-ready files needed to order a physical copy later (see `PRINT.md`). An `epub`-only book cannot be printed.
 - `chapter_count` and `words_per_chapter` are deprecated. They are still accepted so older clients keep working, but they are ignored: use `novel_size`.
-- Unknown values are rejected with `400` and a short code (`invalid_language`, `invalid_novel_size`, `invalid_image_style`, `invalid_output_format`), including on the free `402` quote, so check the quote before signing.
+- Unknown values are rejected with `400` and a short code (`invalid_language`, `invalid_novel_size`, `invalid_image_style`, `invalid_output_format`, `invalid_saga_book_ids`, `saga_too_long`, `invalid_cover_instructions`), including on the free `402` quote, so check the quote before signing.
+- The optional inputs below are checked against the paying agent before anything is charged or settled.
 
 Example body:
 
@@ -80,12 +88,93 @@ Example body:
 }
 ```
 
+## Optional Inputs
+
+### Cover instructions
+
+`cover_instructions` (up to 1500 characters) steers the cover illustration: composition, mood, objects, colours. It does not change the text of the book.
+
+### Dedication page
+
+Stage the dedication first, then pass its id:
+
+```text
+POST /dedications
+```
+
+```json
+{
+  "text": "For Ana, who kept the light on.",
+  "image_base64": "<optional PNG, JPEG or WebP, max 10 MB, base64>",
+  "image_content_type": "image/png",
+  "image_mode": "raw",
+  "language": "en",
+  "wallet_address": "0xYourWallet"
+}
+```
+
+- `text` is required (max 500 characters). The optional photo is placed on its own dedication page.
+- `image_mode`: `raw` keeps the photo as is; `styled` redraws it in the book's artwork style, only when `GET /catalog` lists `styled` in `generation.inputs.dedication.image_modes`.
+- With an API key, send `Authorization: Bearer <api_key>` instead of `wallet_address`.
+- Response: `{"dedication_id": "...", "expires_in_hours": 24}`. Use it within 24 hours; it can be used by one book only.
+
+### Character photos
+
+Up to five main characters, each with a photo and a short description, so the story and every illustration keep them consistent:
+
+```text
+POST /character-references
+```
+
+```json
+{
+  "language": "en",
+  "wallet_address": "0xYourWallet",
+  "characters": [
+    {
+      "slot": 1,
+      "character_name": "Ana",
+      "age_description": "mid thirties",
+      "build_description": "tall, wiry",
+      "distinctive_features": "a scar on her chin",
+      "core_personality": "stubborn, loyal",
+      "motivations_values": "the truth about her father",
+      "voice_and_behavior": "dry humour, few words",
+      "image_base64": "<PNG, JPEG or WebP, max 10 MB, base64>",
+      "image_content_type": "image/png"
+    }
+  ]
+}
+```
+
+- `slot` is 1-5 and unique; `character_name` and `image_base64` are required, the other fields are optional.
+- Response: `{"character_reference_set_id": "...", "count": 1, "expires_in_hours": 24}`.
+
+Only the agent that staged a dedication or character set can use it: the same API key account, or, for x402, the wallet named in `wallet_address` must be the wallet that pays for the generation.
+
+### Saga continuations
+
+Write the next book of a series by listing the previous books, first book first:
+
+```json
+{
+  "title": "The Second Tide",
+  "synopsis": "Twenty years later, the keeper's daughter returns to the lighthouse.",
+  "saga_book_ids": ["FIRST_BOOK_ID", "SECOND_BOOK_ID"]
+}
+```
+
+- Every listed book must be `completed` and one you can read: a book you generated (the paying wallet or the API key's account), a book you bought, or any book published in the bookstore.
+- To continue a series you must list its whole chain in order; a single book that already has sequels is refused.
+- The sequel inherits the series' content rating and its genres, themes, setting, audience and tone. Your `title` and `synopsis` describe the new book.
+- A series holds at most 10 books. Errors come back as `400 saga_validation_failed: <reason>`.
+
 ## Payment and Submission Flow
 
 ### x402
 
 1. Submit `POST /generate` with the full body and no payment header.
-2. Expect `402 Payment Required`. The JSON body echoes `product_type`, `quality_tier`, `novel_size`, `output_format` and `price_usdc`; `pricing_options` lists the default-size prices of the other tier and publishing combinations.
+2. Expect `402 Payment Required`. The JSON body echoes `product_type`, `quality_tier`, `novel_size`, `output_format`, `saga` and `price_usdc`; `pricing_options` lists the default-size prices of the other tier and publishing combinations.
 3. Decode the `payment-required` header (base64 JSON) and pick an `accepts` option.
 4. Sign an EIP-3009 authorization for exactly that option. Generation settles after completion, so the authorization must stay valid for at least 3 hours (`validBefore`).
 5. Retry `POST /generate` with the same JSON body and `PAYMENT-SIGNATURE`.
@@ -101,7 +190,7 @@ Authorization: Bearer <api_key>
 Idempotency-Key: <unique-generation-id>
 ```
 
-3. The API reserves credits for the full price (including the XL and EPUB + PDF surcharges).
+3. The API reserves credits for the full price (including the XL, saga and EPUB + PDF surcharges). If a saga book or staged input is refused, the reservation is returned; retry with a new `Idempotency-Key` once it is fixed.
 4. Expect `202 Accepted`. Credits are captured only when the novel is delivered.
 5. With too little balance, expect `402` with `code: insufficient_prepaid_credits`; the user refills in the dashboard.
 

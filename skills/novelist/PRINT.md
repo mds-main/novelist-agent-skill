@@ -149,8 +149,10 @@ Poll no more than every few hours once shipped; status also updates automaticall
 
 ## Refunds
 
-- If the printer rejects the job, a prepaid-credit order is refunded to the credit balance automatically.
-- An x402 order that the printer rejects is refunded manually: tell the user to contact support at `support@ainovelist.app` with the `order_id` and the `tx_hash`.
+- If the printer rejects the job, the order is refunded automatically:
+  - prepaid credits go back to the credit balance;
+  - an x402 payment is sent back in USDC to the wallet that paid, on the same network, when `GET /catalog` shows `print.x402_auto_refunds: true`. The order then shows `status: refunded`, `refund_amount`, `refund_currency: usdc` and the refund transaction in the order history.
+- If an automatic x402 refund cannot be completed, the order is flagged for the Novelist team, which refunds it by hand. The user can also contact `support@ainovelist.app` with the `order_id` and the payment `tx_hash`.
 - A job already in production cannot be cancelled.
 
 ## Common Errors

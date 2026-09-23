@@ -1,11 +1,11 @@
 ---
 name: novelist
-description: AI-powered novels and printed books for AI agents. Browse and buy bookstore novels, generate custom novels (Pro or World Class quality, S/M/L/XL length, artwork styles, EPUB/PDF), download them, order physical printed copies shipped worldwide, and review books with the public Novelist Agentic API, paying with x402 USDC or account prepaid credits.
+description: AI-powered novels, audiobooks and printed books for AI agents. Browse and buy bookstore novels, generate custom novels and saga sequels (Pro or World Class quality, S/M/L/XL length, artwork styles, dedications, character photos, cover direction, EPUB/PDF), buy AI-narrated audiobooks, order physical printed copies shipped worldwide, and review books with the public Novelist Agentic API, paying with x402 USDC or account prepaid credits.
 ---
 
 # Novelist Agentic API
 
-Use this skill when a user asks an agent to browse Novelist books, buy a bookstore novel, generate a custom novel, download an EPUB or PDF, order a printed copy of a book, check generation or shipping status, or review a book programmatically.
+Use this skill when a user asks an agent to browse Novelist books, buy a bookstore novel, generate a custom novel or the next book of a series, download an EPUB or PDF, buy an audiobook, order a printed copy of a book, check generation or shipping status, or review a book programmatically.
 
 Public API base:
 
@@ -26,13 +26,15 @@ GET /catalog
 - x402 currency is USDC. The accepted networks are listed in the `payment-required` header and in `GET /catalog` (`payment.x402_networks`). The wallet address is the agent identity.
 - API keys: the user signs up at `https://ainovelist.app`, opens the dashboard, creates an API key and adds prepaid credits (EUR). Credits are shared by all keys on the account.
 - Novel generation uses deferred settlement (x402) or a credit reservation (prepaid): payment is captured only after the novel is delivered.
-- Book purchases and print orders are settled immediately.
+- Book purchases, audiobooks and print orders are settled immediately.
+- If a server restart interrupts a paid generation, the book resumes automatically and is settled only when it is delivered.
 
 ## Public Files
 
 - `SKILL.md`: core workflow and endpoint map.
-- `GENERATION.md`: generation options (tier, size, artwork style, format, language), status polling and downloads.
-- `PRINT.md`: physical printed copies: quote, order, pay, track.
+- `GENERATION.md`: generation options (tier, size, artwork style, format, language), dedications, character photos, cover direction, saga sequels, status polling and downloads.
+- `PRINT.md`: physical printed copies: quote, order, pay, track, refunds.
+- `AUDIOBOOK.md`: AI-narrated audiobooks: price, buy, narration status, download.
 - `PAYMENT.md`: x402 and prepaid-credit payment details, network constants and safety rules.
 - `package.json`: metadata for agents and catalog tooling.
 
@@ -46,13 +48,18 @@ GET /catalog
 | GET | `/books/{book_id}` | Book details and x402 payment options | Free |
 | GET | `/books/{book_id}/thumbnail` | Cover thumbnail (JPEG) | Free |
 | GET | `/books/{book_id}/purchase` | Buy a bookstore novel | x402 or credits |
-| POST | `/generate` | Generate a custom novel | x402 or credits |
+| POST | `/dedications` | Stage a dedication page for a generation | Free |
+| POST | `/character-references` | Stage character photos for a generation | Free |
+| POST | `/generate` | Generate a custom novel or saga sequel | x402 or credits |
 | GET | `/status/{request_id}` | Generation status and download links | Owner |
 | GET | `/download` | Signed file download (URL comes from status or purchase) | Signed URL |
 | POST | `/print/quote` | Live price for a printed copy | Free (owner) |
 | POST | `/print/orders` | Order a printed copy | x402 or credits |
 | GET | `/print/orders` | Your print orders | Owner |
 | GET | `/print/orders/{order_id}` | Print order status and tracking | Owner |
+| GET | `/audiobooks/{book_id}` | Audiobook price, narration status, download link | Free / owner |
+| POST | `/audiobooks/{book_id}` | Buy an audiobook | x402 or credits |
+| GET | `/audiobooks/{book_id}/download` | Audio file (URL comes from status) | Signed URL |
 | GET | `/wallet/{wallet_address}/history` | Wallet x402 transactions | Free |
 | GET | `/wallet/{wallet_address}/purchases` | Wallet bookstore purchases with download links | Free |
 | GET | `/exchange-rate` | EUR/USD rate used for USDC prices | Free |
@@ -118,6 +125,10 @@ Main options (all optional, defaults in `GENERATION.md`):
 | `image_style` | `auto` (default) or an artwork style from the catalogue |
 | `output_format` | `epub` (default), `pdf`, `both` (EPUB + PDF, small extra charge). Choose `pdf` or `both` if the user may want a printed copy later. |
 | `language` | one of the 15 catalogue languages |
+| `cover_instructions` | free-text direction for the cover (max 1500 characters) |
+| `dedication_id` | a dedication page staged with `POST /dedications` |
+| `character_reference_set_id` | up to five character photos staged with `POST /character-references` |
+| `saga_book_ids` | the previous books of a series, first book first, to write the next one |
 
 Flow:
 
@@ -143,6 +154,17 @@ GET /print/orders/{order_id}
 ```
 
 Read `PRINT.md` before ordering.
+
+### Buy an audiobook
+
+Any completed book the buyer can read (generated, bought, or public in the bookstore) can be narrated in its language.
+
+```text
+GET /audiobooks/{book_id}
+POST /audiobooks/{book_id}
+```
+
+Read `AUDIOBOOK.md` before buying.
 
 ### Review a book
 

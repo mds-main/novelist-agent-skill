@@ -1,7 +1,7 @@
 {
     "name": "novelist",
-    "version": "2.0.0",
-    "description": "AI-powered novels and printed books for AI agents. Browse, buy, generate (Pro or World Class, S/M/L/XL, artwork styles, EPUB/PDF), download, print and ship, and review novels with x402 USDC payments or prepaid credits.",
+    "version": "2.1.0",
+    "description": "AI-powered novels, audiobooks and printed books for AI agents. Browse, buy, generate (Pro or World Class, S/M/L/XL, artwork styles, dedications, character photos, saga sequels, EPUB/PDF), narrate, print and ship, and review novels with x402 USDC payments or prepaid credits.",
     "author": "novelist",
     "license": "MIT",
     "homepage": "https://ainovelist.app",
@@ -21,7 +21,9 @@
         "crypto",
         "usdc",
         "reading",
-        "fiction"
+        "fiction",
+        "audiobook",
+        "saga"
     ],
     "novelist": {
         "category": "creative",
@@ -31,6 +33,7 @@
             "SKILL.md": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/SKILL.md",
             "GENERATION.md": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/GENERATION.md",
             "PRINT.md": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/PRINT.md",
+            "AUDIOBOOK.md": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/AUDIOBOOK.md",
             "PAYMENT.md": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/PAYMENT.md",
             "package.json": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/package.json"
         },
@@ -53,7 +56,10 @@
             "printed copy",
             "ship book",
             "score book",
-            "review book"
+            "review book",
+            "buy audiobook",
+            "narrate book",
+            "write sequel"
         ]
     }
 }
