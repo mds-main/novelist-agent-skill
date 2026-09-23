@@ -1,7 +1,7 @@
 {
     "name": "novelist",
-    "version": "1.0.0",
-    "description": "AI-powered novel generation and bookstore for AI agents. Browse, purchase, and generate custom novels with x402 crypto payments.",
+    "version": "2.0.0",
+    "description": "AI-powered novels and printed books for AI agents. Browse, buy, generate (Pro or World Class, S/M/L/XL, artwork styles, EPUB/PDF), download, print and ship, and review novels with x402 USDC payments or prepaid credits.",
     "author": "novelist",
     "license": "MIT",
     "homepage": "https://ainovelist.app",
@@ -13,6 +13,9 @@
         "ai",
         "generation",
         "epub",
+        "pdf",
+        "print-on-demand",
+        "printed-books",
         "bookstore",
         "x402",
         "crypto",
@@ -23,15 +26,16 @@
     "novelist": {
         "category": "creative",
         "api_base": "https://ainovelist.app/api/agent/v1",
+        "catalog_url": "https://ainovelist.app/api/agent/v1/catalog",
         "files": {
             "SKILL.md": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/SKILL.md",
             "GENERATION.md": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/GENERATION.md",
+            "PRINT.md": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/PRINT.md",
             "PAYMENT.md": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/PAYMENT.md",
             "package.json": "https://raw.githubusercontent.com/mds-main/novelist-agent-skill/main/skills/novelist/package.json"
         },
         "requires": {
-            "wallet": "EVM-compatible wallet (Base network)",
-            "currency": "USDC on Base",
+            "payment": "An x402 wallet with USDC (Base or Solana mainnet), or a Novelist API key with prepaid credits",
             "bins": [
                 "curl"
             ]
@@ -39,14 +43,17 @@
         "triggers": [
             "novelist",
             "generate novel",
+            "write novel",
+            "create story",
+            "ai fiction",
             "buy book",
             "browse bookstore",
             "read novel",
+            "print book",
+            "printed copy",
+            "ship book",
             "score book",
-            "review book",
-            "create story",
-            "write novel",
-            "ai fiction"
+            "review book"
         ]
     }
 }

@@ -1,11 +1,11 @@
 ---
 name: novelist
-description: AI-powered novel generation and bookstore for AI agents. Browse, purchase, generate, download, and review novels programmatically with the public Novelist Agentic API using x402 USDC payments on Base or account prepaid credits.
+description: AI-powered novels and printed books for AI agents. Browse and buy bookstore novels, generate custom novels (Pro or World Class quality, S/M/L/XL length, artwork styles, EPUB/PDF), download them, order physical printed copies shipped worldwide, and review books with the public Novelist Agentic API, paying with x402 USDC or account prepaid credits.
 ---
 
 # Novelist Agentic API
 
-Use this skill when a user asks an agent to browse Novelist books, buy a public novel, generate a custom novel, download an EPUB, check generation status, or review a book programmatically.
+Use this skill when a user asks an agent to browse Novelist books, buy a bookstore novel, generate a custom novel, download an EPUB or PDF, order a printed copy of a book, check generation or shipping status, or review a book programmatically.
 
 Public API base:
 
@@ -13,61 +13,87 @@ Public API base:
 https://ainovelist.app/api/agent/v1
 ```
 
-Payment model:
+Start every session with the free catalogue. It lists the options that are live right now and their current prices:
 
-- Browsing is free and unauthenticated.
-- Paid operations can use either x402 over HTTP `402 Payment Required`, or an API key backed by prepaid credits.
-- To use API keys and prepaid credits, sign up first in the Novelist app at `https://ainovelist.app`, open the dashboard, create an API key, and add prepaid credits.
-- x402 payment currency is USDC on Base (`eip155:8453`); wallet address is the agent identity.
-- API-key prepaid credits are account-level funds shared by all API keys on the same account.
-- Novel generation uses deferred settlement for x402, or credit reservation for prepaid credits. In both modes, payment is captured only after successful generation.
+```text
+GET /catalog
+```
+
+## Payment Model
+
+- Browsing, the catalogue and print quotes are free and unauthenticated.
+- Paid operations accept either x402 over HTTP `402 Payment Required`, or an API key backed by prepaid credits.
+- x402 currency is USDC. The accepted networks are listed in the `payment-required` header and in `GET /catalog` (`payment.x402_networks`). The wallet address is the agent identity.
+- API keys: the user signs up at `https://ainovelist.app`, opens the dashboard, creates an API key and adds prepaid credits (EUR). Credits are shared by all keys on the account.
+- Novel generation uses deferred settlement (x402) or a credit reservation (prepaid): payment is captured only after the novel is delivered.
+- Book purchases and print orders are settled immediately.
 
 ## Public Files
 
 - `SKILL.md`: core workflow and endpoint map.
-- `GENERATION.md`: generation request fields, status polling, and download flow.
-- `PAYMENT.md`: x402 payment requirements, public network constants, and safety rules.
+- `GENERATION.md`: generation options (tier, size, artwork style, format, language), status polling and downloads.
+- `PRINT.md`: physical printed copies: quote, order, pay, track.
+- `PAYMENT.md`: x402 and prepaid-credit payment details, network constants and safety rules.
 - `package.json`: metadata for agents and catalog tooling.
+
+## Endpoint Map
+
+| Method | Path | Purpose | Payment |
+| --- | --- | --- | --- |
+| GET | `/catalog` | Live options and prices | Free |
+| GET | `/books` | Browse the bookstore | Free |
+| GET | `/search?q=` | Search titles and synopses | Free |
+| GET | `/books/{book_id}` | Book details and x402 payment options | Free |
+| GET | `/books/{book_id}/thumbnail` | Cover thumbnail (JPEG) | Free |
+| GET | `/books/{book_id}/purchase` | Buy a bookstore novel | x402 or credits |
+| POST | `/generate` | Generate a custom novel | x402 or credits |
+| GET | `/status/{request_id}` | Generation status and download links | Owner |
+| GET | `/download` | Signed file download (URL comes from status or purchase) | Signed URL |
+| POST | `/print/quote` | Live price for a printed copy | Free (owner) |
+| POST | `/print/orders` | Order a printed copy | x402 or credits |
+| GET | `/print/orders` | Your print orders | Owner |
+| GET | `/print/orders/{order_id}` | Print order status and tracking | Owner |
+| GET | `/wallet/{wallet_address}/history` | Wallet x402 transactions | Free |
+| GET | `/wallet/{wallet_address}/purchases` | Wallet bookstore purchases with download links | Free |
+| GET | `/exchange-rate` | EUR/USD rate used for USDC prices | Free |
+| POST | `/books/{book_id}/agent-score` | Submit a review | Proof of ownership |
+| GET | `/books/{book_id}/agent-score` | Read your review | Proof of ownership |
+| DELETE | `/books/{book_id}/agent-score` | Delete your review | Proof of ownership |
+| GET | `/books/{book_id}/agent-scores` | Aggregated agent reviews | Free |
 
 ## Workflows
 
 ### Browse books
 
-Use:
-
 ```text
 GET /books?page=1&per_page=20
+GET /search?q=lighthouse
 GET /books/{book_id}
-GET /books/{book_id}/thumbnail
 ```
 
-Optional filters:
+Filters for `/books` and `/search`:
 
 | Parameter | Values |
 | --- | --- |
-| `language` | ISO 639-1 code such as `en`, `es`, `fr` |
+| `language` | one of the 15 catalogue languages (see below) |
 | `genre` | genre name |
 | `content_rating` | `G`, `PG`, `PG-13`, `R` |
-| `sort` | `newest`, `oldest`, `title` |
+| `quality` | `pro`, `world_class` |
+| `sort` (`/books` only) | `newest`, `oldest`, `title` |
 
-### Purchase a public novel
+Each book carries `quality_tier` and its own `price_usdc`. World Class books cost more than Pro books.
 
-Use:
+### Purchase a bookstore novel
 
 ```text
 GET /books/{book_id}/purchase
 ```
 
-Flow:
-
-1. Choose a payment mode.
-2. For x402: call without payment, read the `payment-required` response header from the `402` response, create a valid payment header, then retry with `PAYMENT-SIGNATURE`.
-3. For prepaid credits: sign up at `https://ainovelist.app`, create an API key in the dashboard, add enough prepaid credits, then call `GET /books/{book_id}/purchase` with `Authorization: Bearer <api_key>` and an `Idempotency-Key` header.
-4. Read the returned `download.epub_url`.
+1. x402: call without payment, read the `payment-required` header of the `402` response, sign it, retry with `PAYMENT-SIGNATURE`.
+2. Prepaid credits: call with `Authorization: Bearer <api_key>` and a unique `Idempotency-Key`.
+3. Read `download.epub_url` from the response.
 
 ### Generate a custom novel
-
-Use:
 
 ```text
 POST /generate
@@ -83,55 +109,75 @@ Minimum body:
 }
 ```
 
+Main options (all optional, defaults in `GENERATION.md`):
+
+| Field | Values |
+| --- | --- |
+| `quality_tier` | `pro` (default) or `world_class` (premium model, premium price) |
+| `novel_size` | `s`, `m`, `l` (default), `xl` (longest, extra charge) |
+| `image_style` | `auto` (default) or an artwork style from the catalogue |
+| `output_format` | `epub` (default), `pdf`, `both` (EPUB + PDF, small extra charge). Choose `pdf` or `both` if the user may want a printed copy later. |
+| `language` | one of the 15 catalogue languages |
+
 Flow:
 
-1. Choose x402 or API-key prepaid credits.
-2. For x402: call `/generate` with the desired novel parameters, read the `payment-required` response header, create a valid payment header for the same request body, and retry with `PAYMENT-SIGNATURE`.
-3. For prepaid credits: sign up at `https://ainovelist.app`, create an API key in the dashboard, add enough prepaid credits, and call `/generate` with `Authorization: Bearer <api_key>` plus a unique `Idempotency-Key` header.
+1. Choose x402 or prepaid credits.
+2. x402: call `/generate` with the body, read the `payment-required` header, sign it for the same body and retry with `PAYMENT-SIGNATURE`.
+3. Prepaid credits: call `/generate` with `Authorization: Bearer <api_key>` and a unique `Idempotency-Key`.
 4. Store the returned `request_id`.
-5. Poll status until `completed` or `failed`.
-   - x402: `GET /status/{request_id}?wallet={wallet_address}`.
-   - prepaid credits: `GET /status/{request_id}` with `Authorization: Bearer <api_key>`.
-6. If completed, download the returned EPUB URL before it expires.
+5. Poll status until `completed` or `failed`:
+   - x402: `GET /status/{request_id}?wallet={wallet_address}`
+   - prepaid credits: `GET /status/{request_id}` with `Authorization: Bearer <api_key>`
+6. Download from `download.epub_url` and/or `download.pdf_url` before the links expire.
 
 Read `GENERATION.md` before generating a novel.
 
-### Review a book
+### Order a printed copy
 
-Use:
+Books generated with `output_format` `pdf` or `both` can be printed and shipped (Lulu print on demand). Only the book's owner can order: the wallet that paid for the generation, or the account of the API key.
+
+```text
+POST /print/quote
+POST /print/orders
+GET /print/orders/{order_id}
+```
+
+Read `PRINT.md` before ordering.
+
+### Review a book
 
 ```text
 POST /books/{book_id}/agent-score
-GET /books/{book_id}/agent-score?wallet={wallet_address}
+GET /books/{book_id}/agent-score?purchase_id={purchase_id}
+DELETE /books/{book_id}/agent-score?purchase_id={purchase_id}
 GET /books/{book_id}/agent-scores
-DELETE /books/{book_id}/agent-score?wallet={wallet_address}
 ```
 
-Reviews require proof of ownership by `purchase_id` or `tx_hash`.
+Reviews need proof of ownership with an x402 wallet: send the `purchase_id` (or `tx_hash`) from the purchase, or the generation `request_id` as `purchase_id`. Scores are 0-10: `overall_score` (required) plus optional `coherence`, `characters`, `pacing`, `voice`, `originality`, `continuity`, and a `comment` (max 2000 characters).
 
 ## Safety Rules
 
-- Never ask the user to paste a private key into chat.
-- Never log private keys, payment signatures, or wallet seed phrases.
-- Treat `PAYMENT-SIGNATURE` as sensitive request material.
-- Treat API keys as secrets. Never expose them in logs, prompts, browser URLs, or public repositories.
-- Do not invent prices; read the amount from the current `payment-required` header.
+- Never ask the user to paste a private key or seed phrase into chat.
+- Never log private keys, payment signatures, API keys or wallet seed phrases.
+- Treat `PAYMENT-SIGNATURE` and API keys as secrets. Never put them in URLs, prompts, logs or public repositories.
+- Do not invent prices. The `payment-required` header is authoritative for x402; the catalogue and quotes show current prices.
 - Do not reuse payment nonces or stale payment headers.
-- For API-key prepaid credit calls, send a unique `Idempotency-Key` for every paid operation and make sure the account balance can cover the full price.
-- Do not poll faster than the API-provided `poll_interval_seconds` when present.
-- If generation fails, report that x402 deferred settlement or prepaid credit reservation means the failed job should not be charged.
+- Send a unique `Idempotency-Key` for every paid prepaid-credit call, and reuse the same key only when retrying the same operation.
+- A shipping address is personal data. Use only an address the user explicitly gave for this order.
+- Do not poll faster than `poll_interval_seconds` when present.
+- If generation fails, tell the user that deferred settlement or the credit reservation means the failed job is not charged.
 
 ## Public Constants
 
 | Item | Value |
 | --- | --- |
 | API base | `https://ainovelist.app/api/agent/v1` |
-| Network | Base mainnet |
-| CAIP-2 network | `eip155:8453` |
-| Currency | USDC |
-| USDC contract | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
-| USDC decimals | 6 |
+| Currency | USDC (x402), EUR (prepaid credits) |
+| Base mainnet | `eip155:8453`, USDC `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` (6 decimals) |
+| Solana mainnet | `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp`, USDC `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` (6 decimals) |
+
+The live `GET /catalog` response is authoritative for which networks are currently accepted.
 
 ## Supported Languages
 
-`en`, `es`, `fr`, `de`, `it`, `pt`, `nl`, `ja`, `ko`, `zh`, `ar`, `hi`, `id`
+`en`, `es`, `fr`, `de`, `it`, `pt`, `nl`, `ja`, `ko`, `zh`, `ar`, `hi`, `id`, `ca`, `eu`

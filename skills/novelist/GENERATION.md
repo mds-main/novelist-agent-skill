@@ -14,14 +14,18 @@ Endpoint:
 POST /generate
 ```
 
-## Generation Types
+Call `GET /catalog` first: it lists the options that are live right now (for example whether World Class and XL are on sale) and the current price of every combination.
 
-| Type | Field | Result |
+## What Decides the Price
+
+| Choice | Field | Effect on price |
 | --- | --- | --- |
-| Public | `"publish_to_bookstore": true` | Lower price; generated novel may appear in the bookstore. |
-| Private | `"publish_to_bookstore": false` | Higher price; only the paying wallet can access it. |
+| Bookstore publishing | `publish_to_bookstore` | `true` is cheaper: the novel may appear in the public bookstore. `false` keeps it private to you. |
+| Quality tier | `quality_tier` | `world_class` costs a multiple of `pro` (premium models and configuration). |
+| Length | `novel_size` | `xl` adds a surcharge. `s`, `m` and `l` cost the same. |
+| Delivery format | `output_format` | `both` (EPUB + PDF) adds a small fixed surcharge. `epub` and `pdf` cost the same. |
 
-Prices are dynamic. For x402, always read the current amount from the `payment-required` header returned by the API. For API-key prepaid credits, the server validates the full price against the account credit balance.
+Prices are dynamic. For x402 the `payment-required` header of the `402` response is authoritative. For prepaid credits the server checks the full price against the account balance.
 
 ## Request Body
 
@@ -34,26 +38,28 @@ Required fields:
 
 Optional fields:
 
-| Field | Type | Default |
-| --- | --- | --- |
-| `language` | string | `en` |
-| `genres` | string[] | `["Fiction"]` |
-| `themes` | string[] | none |
-| `target_audience` | string | none |
-| `content_rating` | string | `PG-13` |
-| `tone` | string[] | none |
-| `setting` | string | none |
-| `chapter_count` | integer | `8` |
-| `words_per_chapter` | integer | `2000` |
-| `publish_to_bookstore` | boolean | `false` |
+| Field | Type | Default | Values |
+| --- | --- | --- | --- |
+| `language` | string | `en` | `en`, `es`, `fr`, `de`, `it`, `pt`, `nl`, `ja`, `ko`, `zh`, `ar`, `hi`, `id`, `ca`, `eu` |
+| `quality_tier` | string | `pro` | `pro`, `world_class` |
+| `novel_size` | string | `l` | `s`, `m`, `l`, `xl` |
+| `image_style` | string | `auto` | `auto`, `oil_painting`, `cinematic_realism`, `storybook_illustration`, `watercolor`, `animated_film`, `anime`, `impressionist`, `cubist` |
+| `output_format` | string | `epub` | `epub`, `pdf`, `both` |
+| `publish_to_bookstore` | boolean | `false` | |
+| `content_rating` | string | `PG-13` | `G`, `PG`, `PG-13`, `R` |
+| `genres` | string[] | `["Fiction"]` | up to 5 |
+| `themes` | string[] | none | up to 5 |
+| `tone` | string[] | none | up to 5 |
+| `target_audience` | string | none | up to 100 characters |
+| `setting` | string | none | up to 500 characters |
 
-Allowed ranges:
+Field notes:
 
-| Field | Range |
-| --- | --- |
-| `chapter_count` | 3-20 |
-| `words_per_chapter` | 1000-5000 |
-| `content_rating` | `G`, `PG`, `PG-13`, `R` |
+- `novel_size` controls length. `l` is the standard full-length novel; `s` and `m` are shorter, `xl` is the longest. XL is not offered for a tier that writes the whole novel in a single pass: `GET /catalog` shows `xl_available` per tier, and requesting it anyway returns `400 novel_size_unavailable_for_tier`.
+- `image_style` sets one consistent artwork style for the cover and the part-opener illustrations. `auto` lets the illustrator choose from the story.
+- `output_format`: `pdf` and `both` also produce the print-ready files needed to order a physical copy later (see `PRINT.md`). An `epub`-only book cannot be printed.
+- `chapter_count` and `words_per_chapter` are deprecated. They are still accepted so older clients keep working, but they are ignored: use `novel_size`.
+- Unknown values are rejected with `400` and a short code (`invalid_language`, `invalid_novel_size`, `invalid_image_style`, `invalid_output_format`), including on the free `402` quote, so check the quote before signing.
 
 Example body:
 
@@ -63,43 +69,43 @@ Example body:
   "language": "en",
   "synopsis": "A botanist inherits a mysterious garden where plants exist in quantum superposition.",
   "genres": ["Science Fiction", "Fantasy"],
-  "themes": ["Nature", "Heritage", "Quantum Physics"],
+  "themes": ["Nature", "Heritage"],
+  "setting": "A walled Victorian garden in present-day Cornwall",
   "content_rating": "PG",
-  "chapter_count": 8,
-  "words_per_chapter": 2000,
-  "publish_to_bookstore": true
+  "quality_tier": "world_class",
+  "novel_size": "l",
+  "image_style": "watercolor",
+  "output_format": "both",
+  "publish_to_bookstore": false
 }
 ```
 
 ## Payment and Submission Flow
 
-Choose one payment mode:
-
 ### x402
 
-1. Submit `POST /generate` with the desired request body and no payment header.
-2. Expect `402 Payment Required`.
-3. Decode/read the payment requirements from the `payment-required` header.
-4. Use a wallet-side x402/EIP-3009 implementation to create the `PAYMENT-SIGNATURE` header for the exact same resource and body.
-5. Retry `POST /generate` with the same JSON body and the payment header.
-6. Expect `202 Accepted` with `request_id`, `status_url`, and `poll_interval_seconds`.
+1. Submit `POST /generate` with the full body and no payment header.
+2. Expect `402 Payment Required`. The JSON body echoes `product_type`, `quality_tier`, `novel_size`, `output_format` and `price_usdc`; `pricing_options` lists the default-size prices of the other tier and publishing combinations.
+3. Decode the `payment-required` header (base64 JSON) and pick an `accepts` option.
+4. Sign an EIP-3009 authorization for exactly that option. Generation settles after completion, so the authorization must stay valid for at least 3 hours (`validBefore`).
+5. Retry `POST /generate` with the same JSON body and `PAYMENT-SIGNATURE`.
+6. Expect `202 Accepted` with `request_id`, `status_url` and `poll_interval_seconds`.
 
 ### API key with prepaid credits
 
-1. The user signs up first at `https://ainovelist.app`.
-2. In the dashboard, the user creates an API key and purchases prepaid credits.
-3. Submit `POST /generate` with the desired request body and:
+1. The user signs up at `https://ainovelist.app`, creates an API key in the dashboard and adds prepaid credits.
+2. Submit `POST /generate` with the body and:
 
 ```http
 Authorization: Bearer <api_key>
 Idempotency-Key: <unique-generation-id>
 ```
 
-4. The API reserves prepaid credits for the full server-side price.
-5. Expect `202 Accepted` with `request_id`, `status_url`, and `poll_interval_seconds`.
-6. If the account does not have enough funds, expect HTTP `402` with `code: insufficient_prepaid_credits` and refill in the dashboard.
+3. The API reserves credits for the full price (including the XL and EPUB + PDF surcharges).
+4. Expect `202 Accepted`. Credits are captured only when the novel is delivered.
+5. With too little balance, expect `402` with `code: insufficient_prepaid_credits`; the user refills in the dashboard.
 
-Successful queued response shape:
+Queued response shape:
 
 ```json
 {
@@ -107,14 +113,23 @@ Successful queued response shape:
   "status": "queued",
   "settlement_status": "pending or reserved",
   "payment_model": "deferred_settlement or prepaid_credits",
+  "generation": {
+    "title": "The Quantum Garden",
+    "language": "en",
+    "quality_tier": "world_class",
+    "novel_size": "l",
+    "image_style": "watercolor",
+    "output_format": "both",
+    "parts": 6,
+    "estimated_time_minutes": 60,
+    "max_time_minutes": 120
+  },
   "status_url": "/agent/v1/status/REQUEST_ID",
   "poll_interval_seconds": 60
 }
 ```
 
 ## Polling
-
-Use:
 
 ```text
 GET /status/{request_id}?wallet={wallet_address}
@@ -132,23 +147,26 @@ Status values:
 | Status | Meaning |
 | --- | --- |
 | `queued` | Waiting to start |
-| `processing` | Novel is being generated |
-| `completed` | EPUB is ready |
-| `failed` | Generation failed; deferred payment should not be charged |
-
-When completed, the status response includes a `download.epub_url` value.
+| `processing` / `generating` | The novel is being written |
+| `email_sent` | Final files are being stored; keep polling |
+| `completed` | Files are ready |
+| `failed` | Generation failed; you are not charged |
 
 ## Download
 
-Download URLs are time-limited and wallet-bound. If a URL expires, request status again with the same wallet to get a fresh URL if available.
+When `completed`, the status response has a `download` object:
 
-The final artifact is an EPUB file containing the generated novel.
+| Key | Present when |
+| --- | --- |
+| `epub_url` | `output_format` is `epub` or `both` |
+| `pdf_url` | `output_format` is `pdf` or `both` |
+| `expires_hours` | always |
+
+Download URLs are signed, time-limited and bound to the paying wallet or API key. Use them exactly as returned. If a link expires, call status again for a fresh one.
 
 ## Prompting Guidance
 
-Give the API a specific synopsis. Include concrete protagonist, conflict, setting, stakes, genre, and tone. Avoid one-sentence generic prompts when the user expects a coherent long-form novel.
-
-Good synopsis pattern:
+Give a specific synopsis: protagonist, goal, conflict, setting, stakes, genre and tone. Avoid one-line generic prompts when the user expects a coherent full-length novel.
 
 ```text
 {Protagonist} wants {goal}, but {conflict}. The story is set in {setting}, combines {genres}, and should emphasize {themes/tone}.
@@ -171,3 +189,5 @@ Good synopsis pattern:
 | `ar` | Arabic |
 | `hi` | Hindi |
 | `id` | Indonesian |
+| `ca` | Catalan |
+| `eu` | Basque |

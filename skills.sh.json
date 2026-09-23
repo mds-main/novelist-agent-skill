@@ -4,8 +4,10 @@
   "groupings": [
     {
       "title": "Novelist",
-      "description": "Agentic novel browsing, purchasing, generation, and reviewing with x402 payments.",
-      "skills": ["novelist"]
+      "description": "Agentic novel browsing, buying, generation (Pro or World Class, S/M/L/XL, artwork styles, EPUB/PDF), printed copies and reviews, with x402 USDC or prepaid credits.",
+      "skills": [
+        "novelist"
+      ]
     }
   ]
 }
