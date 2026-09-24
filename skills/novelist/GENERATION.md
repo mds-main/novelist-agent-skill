@@ -56,7 +56,7 @@ Optional fields:
 | `target_audience` | string | none | up to 100 characters |
 | `setting` | string | none | up to 500 characters |
 | `cover_instructions` | string | none | up to 1500 characters |
-| `dedication_id` | string | none | from `POST /dedications` |
+| `dedication_id` | string | none | from `POST /dedications`; private books only |
 | `character_reference_set_id` | string | none | from `POST /character-references` |
 | `saga_book_ids` | string[] | none | up to 9 previous books, first book first |
 
@@ -66,7 +66,8 @@ Field notes:
 - `image_style` sets one consistent artwork style for the cover and the part-opener illustrations. `auto` lets the illustrator choose from the story.
 - `output_format`: `pdf` and `both` also produce the print-ready files needed to order a physical copy later (see `PRINT.md`). An `epub`-only book cannot be printed.
 - `chapter_count` and `words_per_chapter` are deprecated. They are still accepted so older clients keep working, but they are ignored: use `novel_size`.
-- Unknown values are rejected with `400` and a short code (`invalid_language`, `invalid_novel_size`, `invalid_image_style`, `invalid_output_format`, `invalid_saga_book_ids`, `saga_too_long`, `invalid_cover_instructions`), including on the free `402` quote, so check the quote before signing.
+- Unknown values are rejected with `400` and a short code (`invalid_language`, `invalid_novel_size`, `invalid_image_style`, `invalid_output_format`, `invalid_saga_book_ids`, `saga_too_long`, `invalid_cover_instructions`, `dedication_private_books_only`), including on the free `402` quote, so check the quote before signing.
+- `publish_to_bookstore: true` makes the book public: anyone visiting the Novelist Bookstore can find it and get a copy to read. Only publish when the book is meant to be read by others.
 - The optional inputs below are checked against the paying agent before anything is charged or settled.
 
 Example body:
@@ -113,6 +114,7 @@ POST /dedications
 }
 ```
 
+- A dedication is a personal page, so it is for private books only: a request that sends `dedication_id` with `publish_to_bookstore: true` is refused with `400 dedication_private_books_only` (on the free quote too), before anything is charged. `GET /catalog` shows this as `generation.inputs.dedication.private_books_only: true`.
 - `text` is required (max 500 characters). The optional photo is placed on its own dedication page.
 - `image_mode`: `raw` keeps the photo as is; `styled` redraws it in the book's artwork style, only when `GET /catalog` lists `styled` in `generation.inputs.dedication.image_modes`.
 - With an API key, send `Authorization: Bearer <api_key>` instead of `wallet_address`.

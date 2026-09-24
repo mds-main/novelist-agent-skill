@@ -130,7 +130,7 @@ Main options (all optional, defaults in `GENERATION.md`):
 | `output_format` | `epub` (default), `pdf`, `both` (EPUB + PDF, small extra charge). Choose `pdf` or `both` if the user may want a printed copy later. |
 | `language` | one of the 15 catalogue languages |
 | `cover_instructions` | free-text direction for the cover (max 1500 characters) |
-| `dedication_id` | a dedication page staged with `POST /dedications` |
+| `dedication_id` | a dedication page staged with `POST /dedications` (private books only, not with `publish_to_bookstore`) |
 | `character_reference_set_id` | up to five character photos staged with `POST /character-references` |
 | `saga_book_ids` | the previous books of a series, first book first, to write the next one |
 
