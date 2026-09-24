@@ -132,7 +132,7 @@ GET /print/orders/{order_id}?wallet={wallet_address}
 GET /print/orders?wallet={wallet_address}
 ```
 
-With an API key, send `Authorization: Bearer <api_key>` instead of `wallet`.
+With a wallet, also send the wallet-ownership proof headers `X-Wallet-Signature` and `X-Wallet-Timestamp` (see `PAYMENT.md`); without them the call returns `401` with `message_to_sign`. With an API key, send `Authorization: Bearer <api_key>` instead of `wallet`.
 
 | Status | Meaning |
 | --- | --- |
@@ -163,6 +163,7 @@ Poll no more than every few hours once shipped; status also updates automaticall
 | `400` | `address_not_recognized`, `address_fields_rejected` | Fix the address |
 | `400` | `print_render_unavailable_for_trim` | Use one of `available_trims` |
 | `400` | `contact_email_required`, `wallet_address_required` | Missing field |
+| `401` | `wallet_proof_required`, `wallet_proof_expired`, `wallet_proof_invalid` | Reading orders as a wallet: sign `message_to_sign` and retry with the proof headers |
 | `402` | `live_print_payment_required` | Pay on a mainnet network |
 | `402` | `insufficient_prepaid_credits` | Refill credits in the dashboard |
 | `403` | `forbidden` | You do not own this book |

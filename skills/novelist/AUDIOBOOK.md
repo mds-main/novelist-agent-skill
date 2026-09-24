@@ -22,10 +22,17 @@ Check `GET /catalog` first: `audiobooks.available` is `false` when audiobooks ar
 ## 1. Check price and status (free)
 
 ```text
-GET /audiobooks/{book_id}?wallet={wallet_address}
+GET /audiobooks/{book_id}
 ```
 
-With an API key, send `Authorization: Bearer <api_key>` instead of `wallet`. The response has `product_type`, `price_eur`, `price_usdc`, `language_supported`, `default_locale`, `locales` and `owned`. When you own the audiobook it also has `job_status`, `progress`, `duration_seconds` and, once narration is complete, `download_url`.
+Without `wallet` or an API key the response is the public price sheet: `product_type`, `price_eur`, `price_usdc`, `language_supported`, `default_locale`, `locales` and `owned: false`.
+
+To see your own audiobook, identify yourself:
+
+- x402 wallet: `GET /audiobooks/{book_id}?wallet={wallet_address}` with the wallet-ownership proof headers `X-Wallet-Signature` and `X-Wallet-Timestamp` (see `PAYMENT.md`). Without a valid proof the call returns `401` with `message_to_sign`.
+- API key: `Authorization: Bearer <api_key>` instead of `wallet`.
+
+When you own the audiobook the response also has `job_status`, `progress`, `duration_seconds` and, once narration is complete, `download_url`.
 
 ## 2. Buy
 
@@ -59,7 +66,7 @@ Idempotency-Key: <unique-purchase-id>
 
 The price is spent from the credit balance. The audiobook also appears in the user's library on the website.
 
-If you already own the audiobook, the call returns `200` with `payment.status: already_owned`, charges nothing, and restarts the narration if a previous run failed.
+If you already own the audiobook, the call returns `200` with `payment.status: already_owned`, charges nothing, and restarts the narration if a previous run failed. With x402 this repeat call settles no payment, so it also needs the wallet-ownership proof headers of the paying wallet (otherwise `401` with `message_to_sign`).
 
 ## 3. Wait and download
 
@@ -78,6 +85,7 @@ Narration of a full novel takes a while. Poll `GET /audiobooks/{book_id}` (no mo
 | Status | Code | Meaning |
 | --- | --- | --- |
 | `400` | `language_not_supported` | The narrator does not support the book's language |
+| `401` | `wallet_proof_required`, `wallet_proof_expired`, `wallet_proof_invalid` | Sign `message_to_sign` with the wallet and retry with the proof headers |
 | `402` | `insufficient_prepaid_credits` | Refill credits in the dashboard |
 | `403` | `forbidden` | You cannot read this book |
 | `403` | `audiobook_not_owned` | The download link does not belong to an owner |

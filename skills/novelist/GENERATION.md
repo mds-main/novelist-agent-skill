@@ -179,6 +179,7 @@ Write the next book of a series by listing the previous books, first book first:
 4. Sign an EIP-3009 authorization for exactly that option. Generation settles after completion, so the authorization must stay valid for at least 3 hours (`validBefore`).
 5. Retry `POST /generate` with the same JSON body and `PAYMENT-SIGNATURE`.
 6. Expect `202 Accepted` with `request_id`, `status_url` and `poll_interval_seconds`.
+7. If the response was lost and you resend the same `PAYMENT-SIGNATURE`, the API does not charge again: it returns `200` with `status: already_submitted` and the original `request_id`, and needs the wallet-ownership proof headers for that (see `PAYMENT.md`).
 
 ### API key with prepaid credits
 
@@ -220,9 +221,15 @@ Queued response shape:
 
 ## Polling
 
+For x402 generations, name the paying wallet and prove you control it (the payer address is public on-chain, so the wallet alone is not enough):
+
 ```text
 GET /status/{request_id}?wallet={wallet_address}
+X-Wallet-Signature: <signature of the proof message>
+X-Wallet-Timestamp: <unix seconds>
 ```
+
+The first call without the headers returns `401` with `message_to_sign`; sign it with the wallet and retry. One proof stays valid for 300 seconds, so reuse it while polling and sign a new one when it expires. `PAYMENT.md` has the message format and signing examples.
 
 For prepaid API-key generations:
 
@@ -241,6 +248,15 @@ Status values:
 | `completed` | Files are ready |
 | `failed` | Generation failed; you are not charged |
 
+Other status fields:
+
+| Field | Meaning |
+| --- | --- |
+| `settlement_status` | Payment state: `pending`, `settled`, `expired` or `failed` (x402); `reserved`, `captured` or `released` (prepaid credits) |
+| `purchase_id` | x402 only: the generation's transaction id. Keep it: it is the proof of ownership for reviews, and the only one accepted once the book is published in the bookstore (see Review a book in `SKILL.md`). |
+| `error` | When `failed`: a short failure code such as `novel_output_truncated`, or `generation_failed` when no specific code applies. Never free text. |
+| `poll_interval_seconds` | Wait at least this long before polling again |
+
 ## Download
 
 When `completed`, the status response has a `download` object:
@@ -251,7 +267,7 @@ When `completed`, the status response has a `download` object:
 | `pdf_url` | `output_format` is `pdf` or `both` |
 | `expires_hours` | always |
 
-Download URLs are signed, time-limited and bound to the paying wallet or API key. Use them exactly as returned. If a link expires, call status again for a fresh one.
+Download URLs are signed, time-limited and bound to the paying wallet or API key. Use them exactly as returned; the download itself needs no proof headers. If a link expires, call status again (with a fresh wallet proof for x402) for a new one.
 
 ## Prompting Guidance
 

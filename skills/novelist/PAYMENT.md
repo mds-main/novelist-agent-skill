@@ -63,6 +63,77 @@ Idempotency-Key: <unique-operation-id>
 
 Never place API keys in query strings or logs.
 
+## Wallet-Ownership Proof (x402 wallets)
+
+Payer addresses are public on the blockchain, so naming a wallet proves nothing. Every x402 call that returns what a wallet owns (download links, generation `request_id`s, `purchase_id`s and other review proofs, audiobook and print-order details) must carry a short signature proving that the caller controls the wallet. API-key callers never need it.
+
+Message to sign (UTF-8, three lines joined by `\n`, no trailing newline):
+
+```text
+Novelist Agentic API wallet ownership proof
+Wallet: <wallet>
+Timestamp: <unix seconds>
+```
+
+- `<wallet>` is the address lower-cased for EVM wallets, and exactly as written for Solana wallets.
+- `<unix seconds>` is the current time. A proof is accepted for 300 seconds, so one signature can be reused while polling for a few minutes. Timestamps more than 60 seconds in the future are refused.
+
+Send it with the request:
+
+```http
+X-Wallet-Signature: <signature>
+X-Wallet-Timestamp: <unix seconds>
+```
+
+| Wallet | Signature |
+| --- | --- |
+| EVM (Base) | EIP-191 `personal_sign` of the message, hex (the `0x` prefix is optional). Smart-contract wallets (ERC-1271, for example Coinbase Smart Wallet) are supported. |
+| Solana | ed25519 signature of the raw message bytes (`signMessage`), base58 or base64 |
+
+You never have to build the message yourself: a request without a valid proof returns `401` with the exact text to sign for the current server time.
+
+```json
+{
+  "detail": {
+    "error": "wallet_proof_required",
+    "wallet": "0xyourwallet",
+    "signature_scheme": "eip191",
+    "timestamp": 1790000000,
+    "message_to_sign": "Novelist Agentic API wallet ownership proof\nWallet: 0xyourwallet\nTimestamp: 1790000000",
+    "signature_header": "X-Wallet-Signature",
+    "timestamp_header": "X-Wallet-Timestamp",
+    "valid_for_seconds": 300
+  }
+}
+```
+
+Sign `message_to_sign` with the wallet and retry the same request with the two headers. Examples:
+
+```ts
+// viem (EVM)
+const signature = await account.signMessage({ message: detail.message_to_sign })
+```
+
+```python
+# eth_account (EVM)
+from eth_account.messages import encode_defunct
+signature = account.sign_message(encode_defunct(text=message_to_sign)).signature.hex()
+```
+
+```ts
+// Solana (tweetnacl + bs58)
+const signature = bs58.encode(nacl.sign.detached(new TextEncoder().encode(detail.message_to_sign), keypair.secretKey))
+```
+
+| `error` | Meaning | Agent action |
+| --- | --- | --- |
+| `wallet_proof_required` | No proof headers | Sign `message_to_sign` and retry |
+| `wallet_proof_expired` | Timestamp older than 300 seconds or too far ahead | Sign the fresh `message_to_sign` and retry |
+| `wallet_proof_invalid` | The signature is not this wallet's signature of this message | Sign with the wallet named in the request |
+| `wallet_proof_malformed` | Unreadable signature, timestamp or address | Fix the headers |
+
+The proof grants read access to what the wallet already owns. It cannot move funds and is not a payment.
+
 ## Payment Requirements Shape
 
 ```json
@@ -104,12 +175,16 @@ POST /audiobooks/{book_id}
 
 ```text
 GET /status/{request_id}?wallet={wallet_address}
+GET /wallet/{wallet_address}/history
+GET /wallet/{wallet_address}/purchases
 GET /print/orders?wallet={wallet_address}
 GET /print/orders/{order_id}?wallet={wallet_address}
 GET /audiobooks/{book_id}?wallet={wallet_address}
 ```
 
-With an API key, send `Authorization: Bearer <api_key>` instead of the `wallet` parameter.
+With a wallet, send the wallet-ownership proof headers (`X-Wallet-Signature`, `X-Wallet-Timestamp`). With an API key, send `Authorization: Bearer <api_key>` instead of the `wallet` parameter; `/wallet/*` lists x402 wallet activity only.
+
+A paid call answered without a new payment also needs the proof: retrying `GET /books/{book_id}/purchase` for a book the wallet already bought (`already_purchased`), retrying `POST /generate` with a payment that was already submitted (`already_submitted`), and buying an audiobook the wallet already owns (`already_owned`). The first, settled payment proves the wallet by itself.
 
 ## Read Endpoints
 
@@ -118,8 +193,6 @@ GET /catalog
 GET /books
 GET /search?q={query}
 GET /books/{book_id}
-GET /wallet/{wallet_address}/history
-GET /wallet/{wallet_address}/purchases
 GET /exchange-rate
 ```
 
@@ -137,12 +210,16 @@ EPUB, PDF and audiobook download URLs are time-limited, bound to the paying wall
 - Never claim payment succeeded until the API returns success.
 - For a failed generation, tell the user that deferred settlement or the credit reservation means they are not charged.
 - Never pay for a print order with an address the user did not give you for that order.
+- Only sign the exact wallet-ownership proof text shown above (or `message_to_sign` from a Novelist `401`). It is not a payment; never sign anything else in its place.
+- Treat `X-Wallet-Signature` like a short-lived credential: never log it or put it in a URL.
 
 ## Common Errors
 
 | Status | Meaning | Agent action |
 | --- | --- | --- |
 | `400` | Invalid request, option or payment payload | Fix the fields or sign a new payment |
+| `401` `api_key_required` | A prepaid resource was read without its API key | Send `Authorization: Bearer <api_key>` |
+| `401` `wallet_proof_*` | Wallet-ownership proof missing, expired or invalid | Sign `message_to_sign` and retry with the proof headers |
 | `402` | Payment required or payment failed | Read the challenge or report the failure |
 | `402` `insufficient_prepaid_credits` | Account balance too low | Ask the user to refill credits in the dashboard |
 | `402` `live_print_payment_required` | Test-network money for a real print order | Pay on a mainnet network |

@@ -24,6 +24,7 @@ GET /catalog
 - Browsing, the catalogue and print quotes are free and unauthenticated.
 - Paid operations accept either x402 over HTTP `402 Payment Required`, or an API key backed by prepaid credits.
 - x402 currency is USDC. The accepted networks are listed in the `payment-required` header and in `GET /catalog` (`payment.x402_networks`). The wallet address is the agent identity.
+- Payer addresses are public on-chain, so reading what a wallet owns (status, downloads, history, purchases, audiobooks, print orders) also needs a wallet-ownership proof: a short signature of a Novelist message sent in `X-Wallet-Signature` and `X-Wallet-Timestamp`. A call without it returns `401` with the exact `message_to_sign`. Details in `PAYMENT.md`. API-key callers never need it.
 - API keys: the user signs up at `https://ainovelist.app`, opens the dashboard, creates an API key and adds prepaid credits (EUR). Credits are shared by all keys on the account.
 - Novel generation uses deferred settlement (x402) or a credit reservation (prepaid): payment is captured only after the novel is delivered.
 - Book purchases, audiobooks and print orders are settled immediately.
@@ -51,7 +52,7 @@ GET /catalog
 | POST | `/dedications` | Stage a dedication page for a generation | Free |
 | POST | `/character-references` | Stage character photos for a generation | Free |
 | POST | `/generate` | Generate a custom novel or saga sequel | x402 or credits |
-| GET | `/status/{request_id}` | Generation status and download links | Owner |
+| GET | `/status/{request_id}` | Generation status, download links, `purchase_id` | Owner |
 | GET | `/download` | Signed file download (URL comes from status or purchase) | Signed URL |
 | POST | `/print/quote` | Live price for a printed copy | Free (owner) |
 | POST | `/print/orders` | Order a printed copy | x402 or credits |
@@ -60,13 +61,15 @@ GET /catalog
 | GET | `/audiobooks/{book_id}` | Audiobook price, narration status, download link | Free / owner |
 | POST | `/audiobooks/{book_id}` | Buy an audiobook | x402 or credits |
 | GET | `/audiobooks/{book_id}/download` | Audio file (URL comes from status) | Signed URL |
-| GET | `/wallet/{wallet_address}/history` | Wallet x402 transactions | Free |
-| GET | `/wallet/{wallet_address}/purchases` | Wallet bookstore purchases with download links | Free |
+| GET | `/wallet/{wallet_address}/history` | Wallet x402 transactions | Owner (wallet proof) |
+| GET | `/wallet/{wallet_address}/purchases` | Wallet bookstore purchases with download links | Owner (wallet proof) |
 | GET | `/exchange-rate` | EUR/USD rate used for USDC prices | Free |
 | POST | `/books/{book_id}/agent-score` | Submit a review | Proof of ownership |
 | GET | `/books/{book_id}/agent-score` | Read your review | Proof of ownership |
 | DELETE | `/books/{book_id}/agent-score` | Delete your review | Proof of ownership |
 | GET | `/books/{book_id}/agent-scores` | Aggregated agent reviews | Free |
+
+"Owner" means the API key of the account (`Authorization: Bearer <api_key>`) or, for x402, the `wallet` parameter plus the wallet-ownership proof headers of that wallet.
 
 ## Workflows
 
@@ -98,7 +101,8 @@ GET /books/{book_id}/purchase
 
 1. x402: call without payment, read the `payment-required` header of the `402` response, sign it, retry with `PAYMENT-SIGNATURE`.
 2. Prepaid credits: call with `Authorization: Bearer <api_key>` and a unique `Idempotency-Key`.
-3. Read `download.epub_url` from the response.
+3. Read `download.epub_url` and `purchase_id` from the response.
+4. Buying a book the wallet already owns charges nothing and returns `status: already_purchased`; with x402 that answer needs the wallet-ownership proof headers.
 
 ### Generate a custom novel
 
@@ -137,9 +141,10 @@ Flow:
 3. Prepaid credits: call `/generate` with `Authorization: Bearer <api_key>` and a unique `Idempotency-Key`.
 4. Store the returned `request_id`.
 5. Poll status until `completed` or `failed`:
-   - x402: `GET /status/{request_id}?wallet={wallet_address}`
+   - x402: `GET /status/{request_id}?wallet={wallet_address}` with the wallet-ownership proof headers (one proof lasts 300 seconds)
    - prepaid credits: `GET /status/{request_id}` with `Authorization: Bearer <api_key>`
 6. Download from `download.epub_url` and/or `download.pdf_url` before the links expire.
+7. x402: keep the `purchase_id` from the status response; it proves ownership when reviewing the book. A failed generation has a short `error` code and is not charged.
 
 Read `GENERATION.md` before generating a novel.
 
@@ -175,13 +180,14 @@ DELETE /books/{book_id}/agent-score?purchase_id={purchase_id}
 GET /books/{book_id}/agent-scores
 ```
 
-Reviews need proof of ownership with an x402 wallet: send the `purchase_id` (or `tx_hash`) from the purchase, or the generation `request_id` as `purchase_id`. Scores are 0-10: `overall_score` (required) plus optional `coherence`, `characters`, `pacing`, `voice`, `originality`, `continuity`, and a `comment` (max 2000 characters).
+Reviews need proof of ownership with an x402 wallet: send the `purchase_id` (or `tx_hash`) from the purchase response, or, for a book you generated, the `purchase_id` from `GET /status/{request_id}`. The generation `request_id` is also accepted as `purchase_id` while the book is not published in the bookstore; once it is published, only the status `purchase_id` (or `tx_hash`) works. Scores are 0-10: `overall_score` (required) plus optional `coherence`, `characters`, `pacing`, `voice`, `originality`, `continuity`, and a `comment` (max 2000 characters).
 
 ## Safety Rules
 
 - Never ask the user to paste a private key or seed phrase into chat.
 - Never log private keys, payment signatures, API keys or wallet seed phrases.
-- Treat `PAYMENT-SIGNATURE` and API keys as secrets. Never put them in URLs, prompts, logs or public repositories.
+- Treat `PAYMENT-SIGNATURE`, `X-Wallet-Signature` and API keys as secrets. Never put them in URLs, prompts, logs or public repositories.
+- Only sign the exact Novelist wallet-ownership proof text (the `message_to_sign` of a Novelist `401`). It is not a payment; never sign anything else in its place.
 - Do not invent prices. The `payment-required` header is authoritative for x402; the catalogue and quotes show current prices.
 - Do not reuse payment nonces or stale payment headers.
 - Send a unique `Idempotency-Key` for every paid prepaid-credit call, and reuse the same key only when retrying the same operation.
