@@ -8,7 +8,7 @@ Paid API operations support x402 USDC payments or API keys backed by prepaid cre
 
 Live options and prices: `GET https://ainovelist.app/api/agent/v1/catalog`.
 
-x402 wallets prove they control the paying wallet with a short signed message (`X-Wallet-Signature` / `X-Wallet-Timestamp`) before the API returns their downloads, status, history or orders; `PAYMENT.md` explains the flow.
+x402 wallets prove they control the paying wallet with a short signed message (`X-Wallet-Signature` / `X-Wallet-Timestamp`) before the API returns their downloads, status, history or orders, and when they review a book with a public `tx_hash`; `PAYMENT.md` explains the flow.
 
 Install with:
 

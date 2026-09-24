@@ -186,6 +186,8 @@ With a wallet, send the wallet-ownership proof headers (`X-Wallet-Signature`, `X
 
 A paid call answered without a new payment also needs the proof: retrying `GET /books/{book_id}/purchase` for a book the wallet already bought (`already_purchased`), retrying `POST /generate` with a payment that was already submitted (`already_submitted`), and buying an audiobook the wallet already owns (`already_owned`). The first, settled payment proves the wallet by itself.
 
+Reviews (`POST`, `GET` and `DELETE /books/{book_id}/agent-score`) accept a `tx_hash` as proof of ownership only with the proof headers of the wallet that made that payment: a settlement transaction hash or a payment signature can be read by anyone from the chain. Without them the call returns `401` with `message_to_sign`. A `purchase_id` needs no proof headers.
+
 ## Read Endpoints
 
 ```text

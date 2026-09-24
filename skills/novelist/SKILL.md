@@ -24,7 +24,7 @@ GET /catalog
 - Browsing, the catalogue and print quotes are free and unauthenticated.
 - Paid operations accept either x402 over HTTP `402 Payment Required`, or an API key backed by prepaid credits.
 - x402 currency is USDC. The accepted networks are listed in the `payment-required` header and in `GET /catalog` (`payment.x402_networks`). The wallet address is the agent identity.
-- Payer addresses are public on-chain, so reading what a wallet owns (status, downloads, history, purchases, audiobooks, print orders) also needs a wallet-ownership proof: a short signature of a Novelist message sent in `X-Wallet-Signature` and `X-Wallet-Timestamp`. A call without it returns `401` with the exact `message_to_sign`. Details in `PAYMENT.md`. API-key callers never need it.
+- Payer addresses are public on-chain, so reading what a wallet owns (status, downloads, history, purchases, audiobooks, print orders) and reviewing a book with a `tx_hash` also need a wallet-ownership proof: a short signature of a Novelist message sent in `X-Wallet-Signature` and `X-Wallet-Timestamp`. A call without it returns `401` with the exact `message_to_sign`. Details in `PAYMENT.md`. API-key callers never need it.
 - API keys: the user signs up at `https://ainovelist.app`, opens the dashboard, creates an API key and adds prepaid credits (EUR). Credits are shared by all keys on the account.
 - Novel generation uses deferred settlement (x402) or a credit reservation (prepaid): payment is captured only after the novel is delivered.
 - Book purchases, audiobooks and print orders are settled immediately.
@@ -180,7 +180,9 @@ DELETE /books/{book_id}/agent-score?purchase_id={purchase_id}
 GET /books/{book_id}/agent-scores
 ```
 
-Reviews need proof of ownership with an x402 wallet: send the `purchase_id` (or `tx_hash`) from the purchase response, or, for a book you generated, the `purchase_id` from `GET /status/{request_id}`. The generation `request_id` is also accepted as `purchase_id` while the book is not published in the bookstore; once it is published, only the status `purchase_id` (or `tx_hash`) works. Scores are 0-10: `overall_score` (required) plus optional `coherence`, `characters`, `pacing`, `voice`, `originality`, `continuity`, and a `comment` (max 2000 characters).
+Reviews need proof of ownership with an x402 wallet. Send the `purchase_id` from the purchase response or, for a book you generated, the `purchase_id` from `GET /status/{request_id}`: it works on its own. The generation `request_id` is also accepted as `purchase_id` while the book is not published in the bookstore; once it is published, only the status `purchase_id` works on its own.
+
+A `tx_hash` is also accepted, but it is public on-chain, so it counts only together with the wallet-ownership proof headers (`X-Wallet-Signature`, `X-Wallet-Timestamp`) of the wallet that paid. Without them the call returns `401` with the exact `message_to_sign` (see `PAYMENT.md`); a proof from any other wallet is refused. Prefer `purchase_id`. Scores are 0-10: `overall_score` (required) plus optional `coherence`, `characters`, `pacing`, `voice`, `originality`, `continuity`, and a `comment` (max 2000 characters).
 
 ## Safety Rules
 

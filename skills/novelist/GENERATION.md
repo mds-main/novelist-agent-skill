@@ -253,7 +253,7 @@ Other status fields:
 | Field | Meaning |
 | --- | --- |
 | `settlement_status` | Payment state: `pending`, `settled`, `expired` or `failed` (x402); `reserved`, `captured` or `released` (prepaid credits) |
-| `purchase_id` | x402 only: the generation's transaction id. Keep it: it is the proof of ownership for reviews, and the only one accepted once the book is published in the bookstore (see Review a book in `SKILL.md`). |
+| `purchase_id` | x402 only: the generation's transaction id. Keep it: it is the proof of ownership for reviews, and the only one that works without a wallet-ownership proof once the book is published in the bookstore (see Review a book in `SKILL.md`). |
 | `error` | When `failed`: a short failure code such as `novel_output_truncated`, or `generation_failed` when no specific code applies. Never free text. |
 | `poll_interval_seconds` | Wait at least this long before polling again |
 
