@@ -1,0 +1,20 @@
+{
+  "name": "novelist",
+  "owner": {
+    "name": "Novelist",
+    "email": "support@ainovelist.app",
+    "url": "https://ainovelist.app"
+  },
+  "metadata": {
+    "description": "The Novelist plugin for Claude: commission a complete custom novel from a conversation."
+  },
+  "plugins": [
+    {
+      "name": "novelist",
+      "source": "./plugins/novelist",
+      "description": "Plan a custom novel with Claude, then review and pay for it on ainovelist.app. Signs in with your Novelist account; Claude never pays for you.",
+      "category": "productivity",
+      "homepage": "https://ainovelist.app/skill.md"
+    }
+  ]
+}

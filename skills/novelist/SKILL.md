@@ -30,6 +30,10 @@ GET /catalog
 - Book purchases, audiobooks and print orders are settled immediately.
 - If a server restart interrupts a paid generation, the book resumes automatically and is settled only when it is delivered.
 
+## Claude Connector
+
+People chatting with Claude can use the Novelist connector instead of this API: a remote MCP server at `https://ainovelist.app/api/mcp` that signs in with the user's Novelist account (OAuth). Its tools list options and prices (`get_novel_options`), save a novel brief and return a studio link where the user reviews and pays (`prepare_novel`), and track the user's novels (`list_my_novels`, `get_novel_status`). The connector never pays or starts a novel. It is packaged with a skill as the `novelist` Claude plugin in this repository (`plugins/novelist`). Use this HTTP API when an agent must pay and generate autonomously.
+
 ## Public Files
 
 - `SKILL.md`: core workflow and endpoint map.

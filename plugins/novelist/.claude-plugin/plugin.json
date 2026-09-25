@@ -1,0 +1,15 @@
+{
+  "name": "novelist",
+  "displayName": "Novelist",
+  "version": "1.0.0",
+  "description": "Plan a complete custom novel with Claude. Claude drafts the brief (genre, setting, plot, characters, style, language, length) and gives you a link to review and pay on ainovelist.app; the finished novel is emailed to you. You sign in with your Novelist account, and Claude never pays or spends credits for you.",
+  "author": {
+    "name": "Novelist",
+    "email": "support@ainovelist.app",
+    "url": "https://ainovelist.app"
+  },
+  "homepage": "https://ainovelist.app/skill.md",
+  "repository": "https://github.com/mds-main/novelist-agent-skill",
+  "license": "MIT",
+  "keywords": ["novel", "fiction", "writing", "books", "story", "ebook", "epub"]
+}

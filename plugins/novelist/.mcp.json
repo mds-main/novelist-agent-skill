@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "novelist": {
+      "type": "http",
+      "url": "https://ainovelist.app/api/mcp"
+    }
+  }
+}

@@ -22,6 +22,17 @@ Use directly without installing:
 npx skills use mds-main/novelist-agent-skill --skill novelist
 ```
 
+## Claude plugin and connector
+
+This repository is also a Claude plugin marketplace. The `novelist` plugin (`plugins/novelist`) bundles the Novelist connector, a remote MCP server at `https://ainovelist.app/api/mcp` that users sign in to with their Novelist account, and a `novelist-connector` skill. Claude plans the novel brief with the user, and the user reviews and pays on ainovelist.app: the connector never pays, spends credits or starts a novel.
+
+```bash
+claude plugin marketplace add mds-main/novelist-agent-skill
+claude plugin install novelist@novelist
+```
+
+In Claude on the web, desktop or mobile, add the connector under Settings, Connectors, Add custom connector, with the URL `https://ainovelist.app/api/mcp`. See `plugins/novelist/README.md`.
+
 The canonical skill files live in `skills/novelist` (`SKILL.md`, `GENERATION.md`, `PRINT.md`, `AUDIOBOOK.md`, `PAYMENT.md`, `package.json`). The Novelist website's `/skill.md` page and `/api/skill/*` downloads serve these same public files.
 
 These files must stay aligned with the API. When a core feature ships in the Novelist app, update this skill in the same change set (see `AGENTS.md` in the Novelist repositories).
