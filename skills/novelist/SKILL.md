@@ -107,6 +107,8 @@ GET /books/{book_id}/purchase
 2. Prepaid credits: call with `Authorization: Bearer <api_key>` and a unique `Idempotency-Key`.
 3. Read `download.epub_url` and `purchase_id` from the response.
 4. Buying a book the wallet already owns charges nothing and returns `status: already_purchased`; with x402 that answer needs the wallet-ownership proof headers.
+5. Send one paid request per book at a time. If a paid call times out, do not sign a new payment: retry the same one, or check `GET /wallet/{wallet_address}/purchases` first. A second purchase of the same book by the same wallet waits for the first one and is then answered as `already_purchased` without charging.
+6. If a second payment still settles for a book the wallet already owns, the call returns `200` with `status: duplicate_payment`, the existing `purchase_id` and download, and `transaction.refund: manual`. Keep the book; the extra payment is refunded by hand, so report the `tx_hash` to support and do not pay again.
 
 ### Generate a custom novel
 
