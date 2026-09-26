@@ -60,6 +60,8 @@ Optional body:
 2. Sign exactly the offered amount and retry the same request with `PAYMENT-SIGNATURE`. The payer wallet becomes the owner.
 3. Expect `201`. The payment is settled immediately and narration starts.
 
+For a book that is not in the bookstore (one you generated or bought), send the wallet-ownership proof headers `X-Wallet-Signature` and `X-Wallet-Timestamp` of that wallet (see `PAYMENT.md`) on both calls. Wallet addresses are public, so without the proof the call returns `401` with `message_to_sign`, exactly as it does for a book that does not exist. The challenge's `already_owned` is only `true` for a wallet that sent its proof.
+
 Send one paid request per book at a time. If a paid call times out, do not sign a new payment: check `GET /audiobooks/{book_id}` with the wallet-ownership proof first. A second purchase of the same audiobook by the same wallet waits for the first one and is then answered as `already_owned` (see below) without charging.
 
 If a second payment still settles for an audiobook the wallet already owns, the call returns `200` with `payment.status: duplicate_payment`, `payment.refund: manual` and the `tx_hash`. The audiobook is yours; the extra payment is refunded by hand, so report the `tx_hash` to support and do not pay again.
@@ -97,9 +99,8 @@ Narration of a full novel takes a while. Poll `GET /audiobooks/{book_id}` (no mo
 | `400` | `language_not_supported` | The narrator does not support the book's language |
 | `401` | `wallet_proof_required`, `wallet_proof_expired`, `wallet_proof_invalid` | Sign `message_to_sign` with the wallet and retry with the proof headers |
 | `402` | `insufficient_prepaid_credits` | Refill credits in the dashboard |
-| `403` | `forbidden` | You cannot read this book |
 | `403` | `audiobook_not_owned` | The download link does not belong to an owner |
-| `404` | `book_not_found` | No such book, or a book that is not in the bookstore and that you cannot read (on `GET`, identify yourself first) |
+| `404` | `book_not_found` | No such book, or a book that is not in the bookstore and that you cannot read (identify yourself first: API key, or wallet with its proof) |
 | `404` | `audiobook_not_generated` | Narration is not finished yet |
 | `409` | `book_not_completed` | The book is still being written |
 | `409` | `audiobook_payment_in_progress` | This `Idempotency-Key` was already used for a prepaid purchase that is still being processed or was refunded. Check `GET /audiobooks/{book_id}`; if you do not own the audiobook, retry with a new key |
