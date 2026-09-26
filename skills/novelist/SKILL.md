@@ -32,7 +32,7 @@ GET /catalog
 
 ## Claude Connector
 
-People chatting with Claude can use the Novelist connector instead of this API: a remote MCP server at `https://ainovelist.app/api/mcp` that signs in with the user's Novelist account (OAuth). Its tools list options and prices (`get_novel_options`), save a novel brief and return a studio link where the user reviews and pays (`prepare_novel`), and track the user's novels (`list_my_novels`, `get_novel_status`). The connector never pays or starts a novel. It is packaged with a skill as the `novelist` Claude plugin in this repository (`plugins/novelist`). Use this HTTP API when an agent must pay and generate autonomously.
+People chatting with Claude can use the Novelist connector instead of this API: a remote MCP server at `https://ainovelist.app/api/mcp` that signs in with the user's Novelist account (OAuth). Its tools describe what a novel includes with reference prices (`get_novel_options`), save a novel brief and return a studio link where the user reviews and pays (`prepare_novel`), track the user's novels (`list_my_novels`, `get_novel_status`), and link a finished novel to the printed-copy page (`get_printed_copy_link`). The connector never pays or starts a novel. It is packaged with a skill as the `novelist` Claude plugin in this repository (`plugins/novelist`). Use this HTTP API when an agent must pay and generate autonomously.
 
 ## Public Files
 

@@ -24,7 +24,7 @@ npx skills use mds-main/novelist-agent-skill --skill novelist
 
 ## Claude plugin and connector
 
-This repository is also a Claude plugin marketplace. The `novelist` plugin (`plugins/novelist`) bundles the Novelist connector, a remote MCP server at `https://ainovelist.app/api/mcp` that users sign in to with their Novelist account, and a `novelist-connector` skill. Claude plans the novel brief with the user, and the user reviews and pays on ainovelist.app: the connector never pays, spends credits or starts a novel.
+This repository is also a Claude plugin marketplace. The `novelist` plugin (`plugins/novelist`) bundles the Novelist connector, a remote MCP server at `https://ainovelist.app/api/mcp` that users sign in to with their Novelist account, and a `novelist-connector` skill. Claude builds the story with the user and hands it to Novelist as a brief; the user reviews and pays on ainovelist.app. The connector never pays, spends credits or starts a novel, and its prices are references (the exact price depends on country, options and discounts).
 
 ```bash
 claude plugin marketplace add mds-main/novelist-agent-skill

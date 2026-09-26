@@ -12,7 +12,7 @@
     {
       "name": "novelist",
       "source": "./plugins/novelist",
-      "description": "Plan a custom novel with Claude, then review and pay for it on ainovelist.app. Signs in with your Novelist account; Claude never pays for you.",
+      "description": "Shape a story with Claude, then get it as a finished, illustrated novel from Novelist. You review and pay on ainovelist.app; Claude never pays for you.",
       "category": "productivity",
       "homepage": "https://ainovelist.app/skill.md"
     }
