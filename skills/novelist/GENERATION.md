@@ -43,7 +43,7 @@ Optional fields:
 
 | Field | Type | Default | Values |
 | --- | --- | --- | --- |
-| `language` | string | `en` | `en`, `es`, `fr`, `de`, `it`, `pt`, `nl`, `ja`, `ko`, `zh`, `ar`, `hi`, `id`, `ca`, `eu` |
+| `language` | string | `en` | `en`, `es`, `fr`, `de`, `it`, `pt`, `nl`, `ja`, `ko`, `zh`, `ar`, `hi`, `id`, `ca`, `eu`, `sv`, `no`, `da`, `fi` |
 | `quality_tier` | string | `pro` | `pro`, `world_class` |
 | `novel_size` | string | `l` | `s`, `m`, `l`, `xl` |
 | `image_style` | string | `auto` | `auto`, `oil_painting`, `cinematic_realism`, `storybook_illustration`, `watercolor`, `animated_film`, `anime`, `impressionist`, `cubist` |
@@ -298,3 +298,7 @@ Give a specific synopsis: protagonist, goal, conflict, setting, stakes, genre an
 | `id` | Indonesian |
 | `ca` | Catalan |
 | `eu` | Basque |
+| `sv` | Swedish |
+| `no` | Norwegian (Bokmål; `nb` and `nn` are accepted as aliases) |
+| `da` | Danish |
+| `fi` | Finnish |

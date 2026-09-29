@@ -1,6 +1,6 @@
 # Novelist plugin for Claude
 
-Shape a story with Claude, then let Novelist turn it into a finished book. Novelist plans and writes a complete, original novel in parts with continuity and quality checks (about 200 phone pages at the default length, in 15 languages), illustrates the cover and every part opening, and emails it to you as a formatted EPUB for Kindle and other e-readers or as a print-ready PDF, usually within 30 to 120 minutes of payment. In the studio you can add a dedication, photos of your main characters, cover direction or a gift recipient's email; finished novels can continue as a series and, when offered, be ordered as a printed copy or an audiobook.
+Shape a story with Claude, then let Novelist turn it into a finished book. Novelist plans and writes a complete, original novel in parts with continuity and quality checks (about 200 phone pages at the default length, in 19 languages), illustrates the cover and every part opening, and emails it to you as a formatted EPUB for Kindle and other e-readers or as a print-ready PDF, usually within 30 to 120 minutes of payment. In the studio you can add a dedication, photos of your main characters, cover direction or a gift recipient's email; finished novels can continue as a series and, when offered, be ordered as a printed copy or an audiobook.
 
 The plugin bundles:
 

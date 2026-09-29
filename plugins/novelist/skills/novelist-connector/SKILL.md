@@ -5,7 +5,7 @@ description: Turn a story idea into a finished, illustrated novel with Novelist 
 
 # Finished novels with Novelist
 
-Novelist turns a brief into a finished book. Each novel is planned in parts and written chapter by chapter with continuity and quality checks (about 200 phone pages at the default length), gets an illustrated cover and artwork at every part opening, and is delivered by email as a formatted EPUB for Kindle and other e-readers, or as a print-ready PDF, in any of 15 languages. In the studio the user can add a dedication page, photos of the main characters so the artwork draws them as they look, cover direction, and a different delivery email to send the book as a gift. Finished novels can continue as a series, and, when offered, be ordered as a printed copy or a narrated audiobook.
+Novelist turns a brief into a finished book. Each novel is planned in parts and written chapter by chapter with continuity and quality checks (about 200 phone pages at the default length), gets an illustrated cover and artwork at every part opening, and is delivered by email as a formatted EPUB for Kindle and other e-readers, or as a print-ready PDF, in any of 19 languages. In the studio the user can add a dedication page, photos of the main characters so the artwork draws them as they look, cover direction, and a different delivery email to send the book as a gift. Finished novels can continue as a series, and, when offered, be ordered as a printed copy or a narrated audiobook.
 
 `get_novel_options` returns these facts (`what_novelist_delivers`) reflecting what is live today. Rely on that list rather than on this summary.
 

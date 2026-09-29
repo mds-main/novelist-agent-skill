@@ -89,7 +89,7 @@ Filters for `/books` and `/search`:
 
 | Parameter | Values |
 | --- | --- |
-| `language` | one of the 15 catalogue languages (see below) |
+| `language` | one of the 19 catalogue languages (see below) |
 | `genre` | genre name |
 | `content_rating` | `G`, `PG`, `PG-13`, `R` |
 | `quality` | `pro`, `world_class` |
@@ -134,7 +134,7 @@ Main options (all optional, defaults in `GENERATION.md`):
 | `novel_size` | `s`, `m`, `l` (default), `xl` (longest, extra charge) |
 | `image_style` | `auto` (default) or an artwork style from the catalogue |
 | `output_format` | `epub` (default), `pdf`, `both` (EPUB + PDF, small extra charge). Choose `pdf` or `both` if the user may want a printed copy later. |
-| `language` | one of the 15 catalogue languages |
+| `language` | one of the 19 catalogue languages |
 | `cover_instructions` | free-text direction for the cover (max 1500 characters) |
 | `dedication_id` | a dedication page staged with `POST /dedications` (private books only, not with `publish_to_bookstore`) |
 | `character_reference_set_id` | up to five character photos staged with `POST /character-references` |
@@ -216,4 +216,4 @@ The live `GET /catalog` response is authoritative for which networks are current
 
 ## Supported Languages
 
-`en`, `es`, `fr`, `de`, `it`, `pt`, `nl`, `ja`, `ko`, `zh`, `ar`, `hi`, `id`, `ca`, `eu`
+`en`, `es`, `fr`, `de`, `it`, `pt`, `nl`, `ja`, `ko`, `zh`, `ar`, `hi`, `id`, `ca`, `eu`, `sv`, `no`, `da`, `fi`
