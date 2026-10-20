@@ -43,7 +43,7 @@ Optional fields:
 
 | Field | Type | Default | Values |
 | --- | --- | --- | --- |
-| `language` | string | `en` | `en`, `es`, `fr`, `de`, `it`, `pt`, `nl`, `ja`, `ko`, `zh`, `ar`, `hi`, `id`, `ca`, `eu`, `sv`, `no`, `da`, `fi` |
+| `language` | string | `en` | `en`, `es`, `fr`, `de`, `it`, `pt`, `nl`, `ja`, `ko`, `zh`, `ar`, `hi`, `id`, `ca`, `eu`, `sv`, `no`, `da`, `fi`, `pt-br`, `pl`, `zh-tw` |
 | `quality_tier` | string | `pro` | `pro`, `world_class` |
 | `novel_size` | string | `l` | `s`, `m`, `l`, `xl` |
 | `image_style` | string | `auto` | `auto`, `oil_painting`, `cinematic_realism`, `storybook_illustration`, `watercolor`, `animated_film`, `anime`, `impressionist`, `cubist` |
@@ -288,11 +288,11 @@ Give a specific synopsis: protagonist, goal, conflict, setting, stakes, genre an
 | `fr` | French |
 | `de` | German |
 | `it` | Italian |
-| `pt` | Portuguese |
+| `pt` | Portuguese (Portugal) |
 | `nl` | Dutch |
 | `ja` | Japanese |
 | `ko` | Korean |
-| `zh` | Chinese |
+| `zh` | Chinese (Simplified; `zh-Hans` is accepted as an alias) |
 | `ar` | Arabic |
 | `hi` | Hindi |
 | `id` | Indonesian |
@@ -302,3 +302,6 @@ Give a specific synopsis: protagonist, goal, conflict, setting, stakes, genre an
 | `no` | Norwegian (Bokmål; `nb` and `nn` are accepted as aliases) |
 | `da` | Danish |
 | `fi` | Finnish |
+| `pt-br` | Portuguese (Brazil) |
+| `pl` | Polish |
+| `zh-tw` | Chinese (Traditional; `zh-Hant`, `zh-HK` and `zh-MO` are accepted as aliases) |
