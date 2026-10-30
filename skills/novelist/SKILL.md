@@ -32,7 +32,7 @@ GET /catalog
 
 ## Claude Connector
 
-People chatting with Claude can use the Novelist connector instead of this API: a remote MCP server at `https://ainovelist.app/api/mcp` that signs in with the user's Novelist account (OAuth). Its tools describe what a novel includes with reference prices (`get_novel_options`), save a novel brief and return a studio link where the user reviews and pays (`prepare_novel`), track the user's novels (`list_my_novels`, `get_novel_status`), and link a finished novel to the printed-copy page (`get_printed_copy_link`). The connector never pays or starts a novel. It is packaged with a skill as the `novelist` Claude plugin in this repository (`plugins/novelist`). Use this HTTP API when an agent must pay and generate autonomously.
+People chatting with Claude can use the Novelist connector instead of this API: a remote MCP server at `https://ainovelist.app/api/mcp` that signs in with the user's Novelist account (OAuth). Its tools describe what a novel includes with reference prices (`get_novel_options`), save a novel brief and return a studio link where the user reviews and pays (`prepare_novel`, including writer mode briefs while the website offers writer mode), track the user's novels (`list_my_novels`, `get_novel_status`), and link a finished novel to the printed-copy page (`get_printed_copy_link`). The connector never pays or starts a novel. It is packaged with a skill as the `novelist` Claude plugin in this repository (`plugins/novelist`). Use this HTTP API when an agent must pay and generate autonomously.
 
 ## Public Files
 
@@ -153,6 +153,12 @@ Flow:
 7. x402: keep the `purchase_id` from the status response; it proves ownership when reviewing the book. A failed generation has a short `error` code and is not charged.
 
 Read `GENERATION.md` before generating a novel.
+
+### Writer mode (website only)
+
+Writer mode is a World Class novel that its author finishes in the Writer Studio and may publish and sell under the Novelist Writer License, keeping the co-creation credits in every edition. A person must accept that license and finish the book on the website, so this API never sells it: `POST /generate` with `writer_mode: true` returns `400` with `writer_mode_requires_web_studio`, before any quote or payment.
+
+While the website offers writer mode, `GET /catalog` lists it under `writer_mode` (`available: true`) with `start_url`, `landing_url`, `license_url` and reference prices in EUR; otherwise it shows `available: false`. When a user wants to publish a novel as its author, send them to `start_url`. With the Claude connector, `prepare_novel` can prepare a writer mode brief for them to review.
 
 ### Order a printed copy
 

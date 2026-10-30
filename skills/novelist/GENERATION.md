@@ -67,6 +67,7 @@ Field notes:
 - `output_format`: `pdf` and `both` also produce the print-ready files needed to order a physical copy later (see `PRINT.md`). An `epub`-only book cannot be printed.
 - `chapter_count` and `words_per_chapter` are deprecated. They are still accepted so older clients keep working, but they are ignored: use `novel_size`.
 - Unknown values are rejected with `400` and a short code (`invalid_language`, `invalid_novel_size`, `invalid_image_style`, `invalid_output_format`, `invalid_saga_book_ids`, `saga_too_long`, `invalid_cover_instructions`, `dedication_private_books_only`), including on the free `402` quote, so check the quote before signing.
+- `writer_mode` is not a generation option of this API: a request with `writer_mode: true` is refused with `400 writer_mode_requires_web_studio`. Writer mode is bought on the website, where a person accepts the Novelist Writer License (see `SKILL.md`, Writer mode).
 - `publish_to_bookstore: true` makes the book public: anyone visiting the Novelist Bookstore can find it and get a copy to read. Only publish when the book is meant to be read by others.
 - The optional inputs below are checked against the paying agent before anything is charged or settled.
 
