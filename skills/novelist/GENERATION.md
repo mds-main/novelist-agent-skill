@@ -58,7 +58,7 @@ Optional fields:
 | `cover_instructions` | string | none | up to 1500 characters |
 | `dedication_id` | string | none | from `POST /dedications`; private books only |
 | `character_reference_set_id` | string | none | from `POST /character-references` |
-| `saga_book_ids` | string[] | none | up to 9 previous books, first book first |
+| `saga_book_ids` | string[] | none | up to 4 previous books, first book first |
 
 Field notes:
 
@@ -170,7 +170,7 @@ Write the next book of a series by listing the previous books, first book first:
 - Every listed book must be `completed` and one you can read: a book you generated (the paying wallet or the API key's account), a book you bought, or any book published in the bookstore.
 - To continue a series you must list its whole chain in order; a single book that already has sequels is refused.
 - The sequel inherits the series' content rating and its genres, themes, setting, audience and tone. Your `title` and `synopsis` describe the new book.
-- A series holds at most 10 books. Errors come back as `400 saga_validation_failed: <reason>`.
+- A series holds at most 5 books, so a continuation lists at most 4 previous books (`max_previous_books` in `GET /catalog`). A longer list is refused with `400 saga_too_long`; any other refusal comes back as `400 saga_validation_failed: <reason>`.
 
 ## Payment and Submission Flow
 
